@@ -1,4 +1,4 @@
-# passport-api
+# Passport API
 A simple typescript REST API which takes in a passport image and fetches the Date of Birth & Date of Expiry from the image with the help of a third party OCR API. 
 
 ## Run the project in your local environment
