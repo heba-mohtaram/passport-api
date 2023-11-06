@@ -6,26 +6,21 @@ const { extractDatesFromPassport } = require('./utils')
 // Instantiate Express with port.
 const app = express()
 const port = process.env.PORT || 3000
+app.use(express.json());
 
 // Use Multer to handle file upload & processing.
 const storage = multer.memoryStorage()
 const upload = multer({ storage })
 
-app.post('/analyze-passport', upload.single('passport'), async (req, res) => {
+app.post('/analyze-passport', async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).send('Please upload a passport image.');
-    }
-
-    // Convert image to base64 for OCR library to consume it, special header required.
-    const encodedImage = 'data:image/jpeg;base64,' + req.file.buffer.toString('base64')
-
     // Use OCR Space API to consume the image & read the text.
-    const ocrResponse = await ocrSpace(encodedImage, { apiKey: process.env.OCR_API_KEY, language: 'eng' })
+    const ocrResponse = await ocrSpace(req.body.url, { apiKey: process.env.OCR_API_KEY, language: 'eng' })
+    console.log(ocrResponse)
 
     // OCR Space API fails when exit codes are 3 or 4.
     if (ocrResponse.OCRExitCode === 3 || ocrResponse.OCRExitCode === 4) {
-      return res.status(500).send('OCR API Error:' + ocrResponse.ParsedResults[0].ErrorMessage)
+      return res.status(500).send('OCR API Error:' + ocrResponse.ErrorMessage)
     }
 
     // Fetch the text from image from OCR response
@@ -39,6 +34,7 @@ app.post('/analyze-passport', upload.single('passport'), async (req, res) => {
     // Extract the dates from the OCR received text.
     res.json(extractDatesFromPassport(text))
   } catch (error) {
+    console.log(error)
     res.status(500).send('An error occurred while processing the image.')
   }
 })
